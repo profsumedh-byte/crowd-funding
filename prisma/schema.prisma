@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model campaigns {
+  campaign_id    BigInt         @id @default(autoincrement())
+  user_id        BigInt
+  title          String         @db.VarChar
+  about          String
+  status         campaignstatus @default(active)
+  goal_amount    Decimal        @db.Decimal(10, 2)
+  current_amount Decimal        @db.Decimal(10, 2)
+  cover_image    String?
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  users          users          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  donations      donations[]
+}
+
+model donations {
+  donation_id BigInt         @id @default(autoincrement())
+  campaign_id BigInt?
+  donor_name  String         @db.VarChar
+  amount      Decimal        @db.Decimal(5, 2)
+  message     String?
+  payment_id  String         @db.VarChar
+  status      payment_status @default(pending)
+  donated_at  DateTime       @default(now()) @db.Timestamptz(6)
+  campaigns   campaigns?     @relation(fields: [campaign_id], references: [campaign_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  user_id                BigInt                   @id @default(autoincrement())
+  name                   String                   @db.VarChar
+  email                  String                   @unique @db.VarChar
+  password               String?                  @db.VarChar
+  profile_image          String?
+  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  campaigns              campaigns[]
+  users_payment_accounts users_payment_accounts[]
+}
+
+model users_payment_accounts {
+  user_payment_id     BigInt   @id @default(autoincrement())
+  user_id             BigInt?
+  razorpay_acc_id     String   @unique
+  account_holder_name String   @db.VarChar
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  users               users?   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum campaignstatus {
+  active
+  completed
+}
+
+enum payment_status {
+  success
+  pending
+  failed
+}

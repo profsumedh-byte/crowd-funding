@@ -1,26 +1,149 @@
 @import "tailwindcss";
 
+@theme {
+  --font-serif: var(--font-serif), "Fraunces", Georgia, serif;
+  --font-sans: var(--font-sans), "Outfit", system-ui, sans-serif;
+  
+  --color-cubist-bg: #EFEBD8;
+  --color-cubist-canvas: #EAE5D9;
+  --color-cubist-charcoal: #111111;
+  --color-cubist-cobalt: #1D4ED8;
+  --color-cubist-yellow: #F59E0B;
+  --color-cubist-orange: #EA580C;
+  --color-cubist-red: #DC2626;
+  --color-cubist-green: #15803D;
+  --color-cubist-purple: #7C3AED;
+  --color-cubist-sand: #DFDBC8;
+}
+
+/* Base custom font configurations */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background-color: #EFEBD8;
+  color: #111111;
+}
+
+/* Cubist Flat Shadow Offset Styles */
+.shadow-cubist-sm {
+  box-shadow: 3px 3px 0px 0px #111111;
+}
+
+.shadow-cubist {
+  box-shadow: 6px 6px 0px 0px #111111;
+}
+
+.shadow-cubist-lg {
+  box-shadow: 10px 10px 0px 0px #111111;
+}
+
+/* Structural Saturated Card Classes with curves and thick outlines */
+.card-cubist-yellow {
+  border: 4px solid #111111;
+  background-color: #F59E0B; /* Saturated Golden Yellow */
+  color: #111111;
+  box-shadow: 8px 8px 0px 0px #111111;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-cubist-cobalt {
+  border: 4px solid #111111;
+  background-color: #1D4ED8; /* Saturated Cobalt Blue */
+  color: #FFFFFF;
+  box-shadow: 8px 8px 0px 0px #111111;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-cubist-orange {
+  border: 4px solid #111111;
+  background-color: #EA580C; /* Saturated Terracotta Orange */
+  color: #FFFFFF;
+  box-shadow: 8px 8px 0px 0px #111111;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-cubist-green {
+  border: 4px solid #111111;
+  background-color: #15803D; /* Saturated Forest Green */
+  color: #FFFFFF;
+  box-shadow: 8px 8px 0px 0px #111111;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-cubist-purple {
+  border: 4px solid #111111;
+  background-color: #7C3AED; /* Saturated Deep Purple */
+  color: #FFFFFF;
+  box-shadow: 8px 8px 0px 0px #111111;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-cubist-red {
+  border: 4px solid #111111;
+  background-color: #DC2626; /* Saturated Deep Red */
+  color: #FFFFFF;
+  box-shadow: 8px 8px 0px 0px #111111;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-cubist-neutral {
+  border: 4px solid #111111;
+  background-color: #EAE5D9; /* Saturated Sand Neutral */
+  color: #111111;
+  box-shadow: 8px 8px 0px 0px #111111;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Dynamic Cubist Shapes (curves, semicircles) */
+.shape-cubist-arch {
+  border-radius: 9999px 9999px 0 0;
+}
+
+.shape-cubist-curve-1 {
+  border-radius: 60px 0 60px 0;
+}
+
+.shape-cubist-curve-2 {
+  border-radius: 0 60px 0 60px;
+}
+
+.shape-cubist-blob {
+  border-radius: 40% 60% 60% 40% / 50% 30% 70% 50%;
+}
+
+/* Custom Sleek Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #EFEBD8;
+  border-left: 2px solid #111111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #111111;
+  border: 1px solid #EFEBD8;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #EA580C;
+}
+
+/* Standard Scrollbar support for Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #111111 #EFEBD8;
+}
+
+/* Typography styles */
+.serif-display {
+  font-family: var(--font-serif);
+  font-weight: 900;
 }
