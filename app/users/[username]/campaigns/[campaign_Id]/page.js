@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import CampaignStatsCard from "@/app/components/CampaignStatsCard";
+import { useSession } from "next-auth/react";
+
 
 // TODO: connect to real data source (e.g., fetch from Prisma db in a Server Component or via API routes)
 
@@ -36,10 +38,16 @@ export default function UserCampaignPage({
     onChange,
     onSubmit
 }) {
+    const { data: session } = useSession();
+    const userid = session?.user?.id;
     const params = useParams();
+    const campaign_id = params?.campaign_id;
+
     const username = params?.username || "username";
 
     const [localPaymentForm, setLocalPaymentForm] = useState({ donorname: "", donoramount: "", donormessage: "" });
+
+
 
     const handleFormChange = (e) => {
         const { name, value } = e.target;
@@ -95,17 +103,14 @@ export default function UserCampaignPage({
             <div className="max-w-7xl mx-auto px-6 w-full mt-6">
                 <div className="relative w-full h-[280px] md:h-[350px] bg-cubist-sand border-4 border-cubist-charcoal overflow-hidden flex items-end p-6 md:p-12 shadow-cubist-lg">
                     
-                    {/* Confident cubist primary color blocking background overlay */}
-                    <div className="absolute top-0 right-10 md:right-28 w-[360px] h-full bg-cubist-cobalt/20 border-l-4 border-r-4 border-cubist-charcoal/20 shape-cubist-arch translate-y-12 pointer-events-none"></div>
-                    <div className="absolute top-10 left-[10%] w-24 h-24 bg-cubist-red/20 rounded-full border-4 border-cubist-charcoal/20 pointer-events-none"></div>
-                    <div className="absolute bottom-4 left-[22%] w-[200px] h-[80px] bg-cubist-yellow/20 border-t-4 border-l-4 border-cubist-charcoal/20 shape-cubist-curve-1 pointer-events-none"></div>
-                    
-                    {/* Concentric Circle motif overlay */}
-                    <div className="absolute top-4 right-[40%] flex items-center justify-center w-14 h-14 bg-cubist-canvas/20 border-4 border-cubist-charcoal/20 rounded-full pointer-events-none opacity-40">
-                        <div className="absolute w-10 h-10 bg-cubist-red/20 rounded-full"></div>
-                        <div className="absolute w-6 h-6 bg-cubist-yellow/20 rounded-full"></div>
-                        <div className="absolute w-3 h-3 bg-cubist-charcoal/20 rounded-full"></div>
-                    </div>
+                    {/* Custom Banner Image */}
+                    {campaign?.cover_image && (
+                        <img 
+                            src={campaign.cover_image} 
+                            alt={title} 
+                            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                        />
+                    )}
 
                     {/* Dark gradient for text visibility */}
                     <div 

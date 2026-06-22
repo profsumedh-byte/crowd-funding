@@ -112,22 +112,11 @@ export default function UserProfileLayout({ children }) {
                     <div className="flex flex-col lg:flex-row gap-12 items-start">
                         
                         {/* Content Body: this is where nested page content goes */}
-                        <div className={`w-full min-w-0 ${isCampaignsTab ? "lg:w-2/3" : "w-full"}`}>
+                        <div className="w-full min-w-0">
                             {children}
                         </div>
 
-                        {/* Right Column: Donation Guestbook */}
-                        {(isCampaignsTab)&& (
-                            <div className="w-full lg:w-1/3 shrink-0 lg:sticky lg:top-28">
-                                <CampaignStatsCard 
-                                    paymentform={paymentform}
-                                    onChange={formchanged}
-                                    onSubmit={(e) => {
-                                        alert(`Thank you for backing this project! Contribution of $${paymentform.donoramount} simulated successfully.`);
-                                    }}
-                                />
-                            </div>
-                        )}
+                        
                     </div>
                 </div>
             </div>
