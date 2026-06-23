@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 
-function serializePrisma(obj) {
+function serializePrisma(obj) {                                 //What does it do?
+                                                                // The helper recursively traverses the returned data object and converts:
+
+                                                                // BigInt fields (like campaign_id and user_id) to standard string representations (e.g., "6").
+                                                                // Decimal fields (like goal_amount and current_amount) to string numbers (e.g., "1000.00").
+                                                                // Date objects (like created_at or donated_at) to standard ISO strings ("2026-06-23T14:27:09.898Z").
     if (obj === null || obj === undefined) return obj;
     if (Array.isArray(obj)) {
         return obj.map(serializePrisma);

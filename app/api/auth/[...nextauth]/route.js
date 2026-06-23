@@ -11,12 +11,11 @@ const handler = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
-
       const candidate = await prisma.users.findUnique({
         where: { email: user.email },
       });
       if (candidate === null) {
-        const users = await prisma.users.create({
+        await prisma.users.create({
           data: {
             email: user.email,
             name: user.name,

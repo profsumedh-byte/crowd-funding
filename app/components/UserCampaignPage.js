@@ -40,7 +40,7 @@ export default function UserCampaignPage({
     const params = useParams();
     const campaign_id = params?.campaign_id;
 
-    const username = params?.username || "username";
+    const email = params?.email || "email";
 
     const [localPaymentForm, setLocalPaymentForm] = useState({ donorname: "", donoramount: "", donormessage: "" });
 
@@ -84,7 +84,7 @@ export default function UserCampaignPage({
             {/* Back Button */}
             <div className="max-w-7xl mx-auto px-6 w-full pt-8">
                 <Link 
-                    href={`/users/${username}/campaigns`}
+                    href={`/users/${email}/campaigns`}
                     className="inline-flex items-center gap-2 border-2 border-cubist-charcoal px-4 py-2 text-[10px] tracking-widest uppercase font-bold text-cubist-charcoal shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all bg-cubist-canvas"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">

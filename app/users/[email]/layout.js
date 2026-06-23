@@ -10,11 +10,11 @@ export default function UserProfileLayout({ children }) {
     const [paymentform, setpaymentform] = useState({ donorname: "", donoramount: "", donormessage: "" });
     const pathname = usePathname();
     const params = useParams();
-    const username = params?.username;
+    const email = params?.email;
     const campaign_id = params?.campaign_Id || params?.campaign_id;
 
-    const isCampaignsTab = pathname === `/users/${username}/campaigns`;
-    const isparticuar_campaign = !!campaign_id && pathname === `/users/${username}/campaigns/${campaign_id}`;
+    const isCampaignsTab = pathname === `/users/${email}/campaigns`;
+    const isparticuar_campaign = !!campaign_id && pathname === `/users/${email}/campaigns/${campaign_id}`;
 
     const formchanged = (e) => {
         if (e.target.name === "donoramount" && !/^\d*\.?\d*$/.test(e.target.value)) {

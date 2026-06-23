@@ -8,8 +8,8 @@ export default function Home() {
   const { data: session } = useSession();
 
   if (session) {
-    const username = session.user.name;
-    redirect(`/users/${username}`);
+    const email = session.user.email;    // if it has session with email of user
+    redirect(`/users/${email}`);
   }
 
   return (

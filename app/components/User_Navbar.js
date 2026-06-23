@@ -7,12 +7,12 @@ import { signOut } from 'next-auth/react';
 
 const User_Navbar = () => {
     const params = useParams();
-    const username = params?.username;
+    const email = params?.email;
     const [mobileOpen, setMobileOpen] = useState(false);
 
-    // Build paths dynamically based on the current username parameter
-    const profilePath = username ? `/users/${username}` : '#';
-    const campaignsPath = username ? `/users/${username}/campaigns` : '#';
+    // Build paths dynamically based on the current email parameter
+    const profilePath = email ? `/users/${email}` : '#';
+    const campaignsPath = email ? `/users/${email}/campaigns` : '#';
 
     return (
         <nav className="fixed w-full z-40 top-0 inset-x-0 border-b-4 border-cubist-charcoal bg-cubist-cobalt text-white">
@@ -56,7 +56,7 @@ const User_Navbar = () => {
                             </Link>
                         </li>
                         <li>
-                            <Link href={username ? `/users/${username}/payment-details` : '#'} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
+                            <Link href={email ? `/users/${email}/payment-details` : '#'} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
                                 Payment Details
                             </Link>
                         </li>

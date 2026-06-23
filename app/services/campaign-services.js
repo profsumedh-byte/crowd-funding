@@ -7,9 +7,14 @@ export async function createCampaign(data) {
     return { success: true, message: "Campaign created" };
 }
 
-export async function getUserCampaigns(username) {
-    const user = await prisma.users.findFirst({
-        where: { name: username }
+export async function getUserCampaigns(email) {
+    if (!email) return [];
+    const decoded = decodeURIComponent(email).trim();
+
+    const user = await prisma.users.findUnique({
+        where: {
+            email: decoded
+        }
     });
     if (!user) return [];
     

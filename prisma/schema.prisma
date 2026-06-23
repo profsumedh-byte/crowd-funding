@@ -35,7 +35,7 @@ model donations {
 
 model users {
   user_id                BigInt                   @id @default(autoincrement())
-  name                   String                   @db.VarChar
+  name                   String?                  @db.VarChar
   email                  String                   @unique @db.VarChar
   password               String?                  @db.VarChar
   profile_image          String?
