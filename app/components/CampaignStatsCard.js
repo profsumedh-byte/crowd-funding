@@ -32,6 +32,7 @@ export default function CampaignStatsCard({
         if (onSubmit) {
             onSubmit(e);
         }
+        
     };
 
     return (

@@ -1,209 +1,255 @@
 "use client";
 
-import React, { useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import CampaignStatsCard from "@/app/components/CampaignStatsCard";
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Script from "next/script";
+import UserCampaignPage from "@/app/components/UserCampaignPage";
+import { createDonation } from "@/app/services/campaign-services";
+import { createorder } from "@/app/services/rzp-services";
+import { verifypayment } from "@/app/services/rzp-services";
 
+// Converts a UTC ISO string to a relative time label like "2h ago" or "3d ago"
+function getRelativeTime(isoString) {
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+}
 
-// TODO: connect to real data source (e.g., fetch from Prisma db in a Server Component or via API routes)
+// Extracts 1–2 uppercase initials from a donor name for the avatar
+function getInitials(name = "") {
+    return name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((w) => w[0]?.toUpperCase() ?? "")
+        .join("");
+}
 
-/**
- * UserCampaignPage - Pure presentational page component for campaign detail view.
- * 
- * @param {Object} props
- * @param {Object} props.campaign - Campaign details object
- * @param {string} props.campaign.title - Title of the campaign
- * @param {string} props.campaign.tagline - Short description or tagline
- * @param {string} props.campaign.category - Tag category for the campaign
- * @param {string} props.campaign.about - Main narrative/about text
- * @param {number} props.campaign.goal - Funding goal target amount
- * @param {number} props.campaign.raised - Total amount raised so far
- * @param {number} props.campaign.backers - Total supporter backers count
- * @param {string} props.campaign.timeLeft - Days/hours remaining (e.g., "12 days")
- * @param {string} props.campaign.endDateText - End date text (e.g., "ends july 2nd")
- * @param {Array<Object>} props.campaign.donors - List of donor contributions
- * @param {string} props.campaign.donors[].name - Donor name or initials
- * @param {number} props.campaign.donors[].amount - Amount pledged
- * @param {string} props.campaign.donors[].time - Relative time (e.g., "2h ago")
- * @param {string} props.campaign.donors[].avatar - Initials/Avatar abbreviation
- * @param {Object} [props.paymentForm] - Form input values { donorname, donoramount, donormessage }
- * @param {function} [props.onChange] - Input change callback
- * @param {function} [props.onSubmit] - Backing form submission callback
- */
-export default function UserCampaignPage({
-    campaign,
-    paymentForm,
-    onChange,
-    onSubmit
-}) {
-    const { data: session } = useSession();
-    const userid = session?.user?.id;
+// Formats a Decimal/string amount as a locale string with no trailing zeros
+function fmtAmount(amount) {
+    return parseFloat(amount).toLocaleString("en-IN");
+}
+
+// Computes "X days left" or "Ended" from an ISO end-date string
+function getTimeLeft(createdAt) {
+    // Campaigns don't store an end date in the schema; derive 30-day window from created_at
+    const end = new Date(new Date(createdAt).getTime() + 30 * 24 * 60 * 60 * 1000);
+    const diffMs = end - Date.now();
+    if (diffMs <= 0) return "Ended";
+    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return `${days} day${days !== 1 ? "s" : ""}`;
+}
+
+function getEndDateText(createdAt) {
+    const end = new Date(new Date(createdAt).getTime() + 30 * 24 * 60 * 60 * 1000);
+    return `ends ${end.toLocaleDateString("en-IN", { month: "long", day: "numeric" })}`;
+}
+
+// Derives a tagline from the about text (first sentence, max 120 chars)
+function deriveTagline(about = "") {
+    const first = about.split(/[.!?]/)[0].trim();
+    return first.length > 120 ? first.slice(0, 117) + "…" : first;
+}
+
+export default function CampaignDetailPage() {
     const params = useParams();
-    const campaign_id = params?.campaign_id;
+    const campaignId = params.campaign_Id || params.campaign_id;
+    const { data: session } = useSession();
+    const router = useRouter();
 
-    const username = params?.username || "username";
+    const [campaign, setCampaign] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const [localPaymentForm, setLocalPaymentForm] = useState({ donorname: "", donoramount: "", donormessage: "" });
+    const [paymentForm, setPaymentForm] = useState({
+        donorname: "",
+        donoramount: "",
+        donormessage: "",
+    });
 
-
-
-    const handleFormChange = (e) => {
-        const { name, value } = e.target;
-        if (name === "donoramount" && !/^\d*\.?\d*$/.test(value)) {
-            return;
+    const fetchCampaign = useCallback(async () => {
+        try {
+            if (!campaignId) {
+                throw new Error("Missing campaign ID");
+            }
+            const res = await fetch(`/api/campaigns/${campaignId}`);
+            if (!res.ok) {
+                const { error: msg } = await res.json();
+                throw new Error(msg || "Failed to load campaign");
+            }
+            const data = await res.json();
+            setCampaign(data);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
-        setLocalPaymentForm((prev) => ({ ...prev, [name]: value }));
+    }, [campaignId]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        fetchCampaign();
+    }, [fetchCampaign]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        if (name === "donoramount" && !/^\d*\.?\d*$/.test(value)) return;
+        setPaymentForm((prev) => ({ ...prev, [name]: value }));
     };
 
-    const activePaymentForm = onChange ? paymentForm : localPaymentForm;
-    const activeOnChange = onChange || handleFormChange;
+    const handleSubmit = async () => {
+        const amount = parseFloat(paymentForm.donoramount);
+        const message = paymentForm.donormessage;
+        if (!paymentForm.donorname.trim() || isNaN(amount) || amount <= 0) return;
 
-    // Obviously-fake temporary visual placeholder fallbacks directly in the render
-    const title = campaign?.title || "Campaign Title";
-    const tagline = campaign?.tagline || "This is a placeholder tagline for the campaign.";
-    const category = campaign?.category || "Category";
-    const about = campaign?.about || "This is a placeholder description about the campaign. Connect to a real data source to populate this content dynamically.";
-    
-    const goal = campaign?.goal ?? 0;
-    const raised = campaign?.raised ?? 0;
-    const backers = campaign?.backers ?? 0;
-    const timeLeft = campaign?.timeLeft || "0 days";
-    const endDateText = campaign?.endDateText || "ends date";
+        try {
+            // 1. Create order on the server
+            const order = await createorder({ 
+                amount, 
+                currency: 'INR', 
+                receipt: paymentForm.donorname, 
+                notes: { message } 
+            });
 
-    const progressPercent = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) + "%" : "0%";
-    const totalRaisedFormatted = "₹" + raised.toLocaleString();
-    const targetFormatted = "₹" + goal.toLocaleString();
+            if (!order || !order.id) {
+                alert("Failed to initiate payment order. Please try again.");
+                return;
+            }
 
-    // Generic placeholder donor list items directly in render
-    const donorsList = campaign?.donors || [
-        { name: "Donor Name", amount: 0, time: "0h ago", avatar: "DN" },
-        { name: "Donor Name", amount: 0, time: "0h ago", avatar: "DN" },
-        { name: "Donor Name", amount: 0, time: "0h ago", avatar: "DN" },
-        { name: "Donor Name", amount: 0, time: "0h ago", avatar: "DN" }
-    ];
+            // 2. Create pending donation record in the database
+            const result = await createDonation({
+                campaign_id: campaignId,
+                donor_name: paymentForm.donorname.trim(),
+                amount,
+                message: paymentForm.donormessage.trim() || null,
+                status: "pending",
+                payment_id: order.id, // Store the order ID as placeholder
+            });
+
+            if (!result.success) {
+                alert("Failed to initialize donation record.");
+                return;
+            }
+
+            // 3. Set up Razorpay Options
+            const options = {
+                key: process.env.NEXT_PUBLIC_RZP_KEY,
+                amount: order.amount,
+                currency: order.currency,
+                name: process.env.NEXT_PUBLIC_COMPANY_NAME || "Crowd Funding",
+                description: message || "Campaign Donation",
+                order_id: order.id,
+                prefill: {
+                    name: session?.user?.name || "",
+                    email: session?.user?.email || "",
+                },
+                handler: function (response) {
+                    const order = response.razorpay_order_id;
+                    const paymentid = response.razorpay_payment_id;
+                    const signature = response.razorpay_signature;
+
+                    verifypayment({ order, paymentid, signature })
+                        .then(data => {
+                            if (data.status === 200) {
+                                alert("Thank you! Your donation was successful.");
+                                setPaymentForm({ donorname: "", donoramount: "", donormessage: "" });
+                                fetchCampaign();
+                            } else {
+                                alert("Payment verification failed");
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error:", error);
+                            alert("Error verifying payment");
+                        });
+                },
+                theme: {
+                    color: "#F1B812", // Accent color 
+                }
+            };
+
+            // 4. Open Razorpay Checkout Modal
+            if (typeof window !== "undefined" && window.window.Razorpay) {
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            } else if (typeof window !== "undefined" && window.Razorpay) {
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            } else {
+                alert("Razorpay checkout could not be loaded. Please refresh the page.");
+            }
+        } catch (err) {
+            console.error("Payment flow error:", err);
+            alert("An error occurred during payment processing: " + err.message);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-cubist-bg flex items-center justify-center">
+                <p className="font-sans text-cubist-charcoal/60 text-sm uppercase tracking-widest animate-pulse">
+                    Loading campaign…
+                </p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-cubist-bg flex flex-col items-center justify-center gap-4">
+                <p className="font-sans text-cubist-charcoal text-sm uppercase tracking-widest">
+                    {error}
+                </p>
+                <button
+                    onClick={() => router.back()}
+                    className="text-xs underline text-cubist-charcoal/60 uppercase tracking-widest"
+                >
+                    Go back
+                </button>
+            </div>
+        );
+    }
+
+    // Shape raw DB data into the prop contract UserCampaignPage expects
+    const goal = parseFloat(campaign.goal_amount);
+    const raised = parseFloat(campaign.current_amount);
+    const backers = campaign.donations?.length ?? 0;
+
+    const donors = (campaign.donations ?? []).map((d) => ({
+        name: d.donor_name,
+        amount: parseFloat(d.amount),
+        time: getRelativeTime(d.donated_at),
+        avatar: getInitials(d.donor_name),
+    }));
+
+    const campaignProp = {
+        title: campaign.title,
+        tagline: deriveTagline(campaign.about),
+        category: campaign.status === "active" ? "Active" : "Completed",
+        about: campaign.about,
+        goal,
+        raised,
+        backers,
+        timeLeft: getTimeLeft(campaign.created_at),
+        endDateText: getEndDateText(campaign.created_at),
+        cover_image: campaign.cover_image ?? null,
+        donors,
+    };
 
     return (
-        <div className="min-h-screen bg-cubist-bg text-cubist-charcoal font-sans flex flex-col pb-20">
-            {/* Back Button */}
-            <div className="max-w-7xl mx-auto px-6 w-full pt-8">
-                <Link 
-                    href={`/users/${username}/campaigns`}
-                    className="inline-flex items-center gap-2 border-2 border-cubist-charcoal px-4 py-2 text-[10px] tracking-widest uppercase font-bold text-cubist-charcoal shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all bg-cubist-canvas"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-                    </svg>
-                    Back to Campaigns
-                </Link>
-            </div>
-
-            {/* Banner Section */}
-            <div className="max-w-7xl mx-auto px-6 w-full mt-6">
-                <div className="relative w-full h-[280px] md:h-[350px] bg-cubist-sand border-4 border-cubist-charcoal overflow-hidden flex items-end p-6 md:p-12 shadow-cubist-lg">
-                    
-                    {/* Custom Banner Image */}
-                    {campaign?.cover_image && (
-                        <img 
-                            src={campaign.cover_image} 
-                            alt={title} 
-                            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                        />
-                    )}
-
-                    {/* Dark gradient for text visibility */}
-                    <div 
-                        className="absolute inset-0 pointer-events-none"
-                        style={{ backgroundImage: "linear-gradient(to top, rgba(17, 17, 17, 0.7) 0%, rgba(17, 17, 17, 0) 100%)" }}
-                    ></div>
-
-                    {/* Overlay Text Details */}
-                    <div className="relative z-10 text-white w-full">
-                        <span className="text-[9px] uppercase font-extrabold tracking-widest text-cubist-charcoal bg-cubist-yellow px-2.5 py-1 border-2 border-cubist-charcoal inline-block shadow-cubist-sm mb-3">
-                            {category}
-                        </span>
-                        <h1 className="serif-display text-3xl md:text-5xl uppercase tracking-tight text-white leading-none drop-shadow-md">
-                            {title}
-                        </h1>
-                        <p className="font-sans text-xs md:text-sm text-white/90 font-light mt-2 max-w-2xl leading-relaxed">
-                            {tagline}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Content Layout Grid */}
-            <div className="max-w-7xl mx-auto px-6 w-full mt-12 mb-24">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-                    
-                    {/* Left Column (About + Donors) - order-2 on mobile, order-1 on desktop */}
-                    <div className="lg:col-span-2 order-2 lg:order-1 flex flex-col gap-8 w-full min-w-0">
-                        
-                        {/* About Campaign Box */}
-                        <div className="card-cubist-neutral p-8 md:p-10 shape-cubist-curve-1 relative flex flex-col">
-                            <span className="text-[9px] uppercase tracking-widest text-cubist-charcoal/60 font-extrabold font-sans mb-3 block">Manifesto</span>
-                            <h2 className="serif-display text-2xl text-cubist-charcoal font-black uppercase mb-4 border-b-2 border-cubist-charcoal/20 pb-3">
-                                About the Campaign
-                            </h2>
-                            <p className="font-sans font-normal text-cubist-charcoal/80 text-sm md:text-base leading-relaxed">
-                                {about}
-                            </p>
-                        </div>
-
-                        {/* Recent Donors List */}
-                        <div className="card-cubist-yellow p-8 md:p-10 shape-cubist-curve-2 relative flex flex-col">
-                            <span className="text-[9px] uppercase tracking-widest text-cubist-charcoal/60 font-extrabold font-sans mb-3 block">Patron Roster</span>
-                            <h2 className="serif-display text-2xl text-cubist-charcoal font-black uppercase mb-4 border-b-2 border-cubist-charcoal/20 pb-3">
-                                Recent Backers
-                            </h2>
-                            
-                            <div className="flex flex-col gap-1">
-                                {donorsList.map((donor, idx) => (
-                                    <div 
-                                        key={idx}
-                                        className="border-b-2 border-cubist-charcoal/15 last:border-0 py-4 last:pb-0 first:pt-0 flex items-center justify-between text-cubist-charcoal group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="relative w-10 h-10 rounded-full border-2 border-cubist-charcoal bg-cubist-orange text-white flex items-center justify-center font-bold text-xs shadow-cubist-sm shrink-0 group-hover:scale-105 transition-transform">
-                                                {donor.avatar}
-                                            </div>
-                                            <div>
-                                                <h4 className="font-sans font-black text-sm text-cubist-charcoal uppercase tracking-wide">
-                                                    {donor.name}
-                                                </h4>
-                                                <p className="text-[9px] text-cubist-charcoal/60 uppercase tracking-widest font-extrabold mt-0.5">
-                                                    {donor.time}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-1.5 bg-white border-2 border-cubist-charcoal px-3 py-1.5 shadow-cubist-sm group-hover:-translate-y-0.5 transition-transform">
-                                            <span className="serif-display text-sm font-black text-cubist-orange">+$</span>
-                                            <span className="serif-display text-base font-black text-cubist-charcoal">{donor.amount.toLocaleString()}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column (Stats & Form) - order-1 on mobile, order-2 on desktop */}
-                    <div className="lg:col-span-1 order-1 lg:order-2 lg:sticky lg:top-24 self-start w-full">
-                        <CampaignStatsCard 
-                            paymentform={activePaymentForm}
-                            onChange={activeOnChange}
-                            onSubmit={onSubmit}
-                            totalRaised={totalRaisedFormatted}
-                            target={targetFormatted}
-                            progress={progressPercent}
-                            backers={backers.toLocaleString()}
-                            timeLeft={timeLeft}
-                            endDateText={endDateText}
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
+        <>
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+            <UserCampaignPage
+                campaign={campaignProp}
+                paymentForm={paymentForm}
+                onChange={handleChange}
+                onSubmit={handleSubmit}
+            />
+        </>
     );
 }
