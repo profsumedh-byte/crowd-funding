@@ -40,6 +40,7 @@ model users {
   password               String?                  @db.VarChar
   profile_image          String?
   created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  about                  String?
   campaigns              campaigns[]
   users_payment_accounts users_payment_accounts[]
 }

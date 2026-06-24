@@ -10,7 +10,7 @@ export async function POST(req) {
     }
 
     const formData = await req.formData();
-    const file = formData.get('file');
+    const file = formData.get('profile_pic');
 
     if (!file) {
       return Response.json({ error: "No file provided" }, { status: 400 });
@@ -30,7 +30,7 @@ export async function POST(req) {
     const fileUri = `data:${file.type};base64,${base64}`;
 
     const result = await cloudinary.uploader.upload(fileUri, {
-      folder: 'buy-me-gta',
+      folder: 'Profile_Pic',
     });
 
     return Response.json({ url: result.secure_url });
