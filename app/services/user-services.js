@@ -1,8 +1,10 @@
 "use server"
 import prisma from "@/app/lib/prisma";
+import { cloudinary } from "@/app/lib/cloudinary";
 
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 
 export async function checkuser(email) {
     const session = await getServerSession(authOptions);
@@ -10,15 +12,30 @@ export async function checkuser(email) {
     return session.user.email.trim().toLowerCase() === decodeURIComponent(email).trim().toLowerCase();
 }
 
-export async function updateprofilepic(imageUrl, emailofuser) {
-    // udation logic in prisma
+export async function updateprofilepic(imagepublic_id, emailofuser) {
+    // Get the current user profile to find the old image public ID
+    const user = await prisma.users.findUnique({
+        where: { email: emailofuser },
+        select: { profile_image: true }
+    });
+
+    if (user && user.profile_image) {
+        // Only delete from Cloudinary if it is a public ID (and not a placeholder URL starting with http)
+        if (!user.profile_image.startsWith("http")) {
+            try {
+                await cloudinary.uploader.destroy(user.profile_image);
+            } catch (err) {
+                console.error("Error deleting old profile image from Cloudinary:", err);
+            }
+        }
+    }
+
     const updateuser = await prisma.users.update({
         where: { email: emailofuser },
-        data: { profile_image: imageUrl },
+        data: { profile_image: imagepublic_id },
     })
 
     return {status: 200};
-
 }
 
 
@@ -58,4 +75,6 @@ export async function updateUserProfile(emailofuser, name, about) {
         console.error("Error updating profile in db:", err);
         return { status: 500, error: "Failed to update profile in database" };
     }
-}
+}
+
+

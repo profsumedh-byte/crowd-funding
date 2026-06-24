@@ -33,7 +33,7 @@ export async function POST(req) {
       folder: 'Profile_Pic',
     });
 
-    return Response.json({ url: result.secure_url });
+    return Response.json({ url: result.secure_url, public_id: result.public_id });
 
   } catch (error) {
     console.error("Upload error:", error);

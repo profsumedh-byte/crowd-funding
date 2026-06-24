@@ -6,6 +6,8 @@ import { usePathname, useParams, redirect } from "next/navigation";
 import User_Navbar from "@/app/components/User_Navbar";
 import CampaignStatsCard from "@/app/components/CampaignStatsCard";
 import { checkuser, updateprofilepic, getUser, updateUserProfile } from "@/app/services/user-services";
+import { Cloudinary } from "@cloudinary/url-gen";
+import CubistLoader from "@/app/components/CubistLoader";
 
 export const UserProfileContext = createContext(null);
 
@@ -20,6 +22,7 @@ export default function UserProfileLayout({ children }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editForm, setEditForm] = useState({ name: "", about: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [pic_updating, setpic_updating] = useState(false)
     
     const pathname = usePathname();
     const params = useParams();
@@ -105,9 +108,9 @@ export default function UserProfileLayout({ children }) {
     };
     const profile_change = async (e) => {
         const selectedFiles = e.target.files;
-        if (selectedFiles) {
+        if (selectedFiles && selectedFiles[0]) {
+            setpic_updating(true);
             try {
-                
                 const formDataProfilePic = new FormData();
                 formDataProfilePic.append("profile_pic", selectedFiles[0]);
                 const res = await fetch("/api/uploads/profile_pic", {
@@ -117,22 +120,39 @@ export default function UserProfileLayout({ children }) {
 
                 if (res.ok) {
                     const result = await res.json();
-                    const imageUrl = result.URL || result.url || null;
-                    console.log("Uploaded profile_pic URL:", imageUrl);
-                    const emailofuser=decodeURIComponent(email).trim().toLowerCase();
-                    const updated_pp = await updateprofilepic(imageUrl,emailofuser);
-                    if(updated_pp.status === 200){
-                        alert("updated your profile in db")
-                    }else{
-                        alert("unable to update image in db")
+                    const imagepublic_id = result.public_id || null;
+                    console.log("Uploaded profile_pic URL:", result.url);
+                    const emailofuser = decodeURIComponent(email).trim().toLowerCase();
+                    const updated_pp = await updateprofilepic(imagepublic_id, emailofuser);
+                    if (updated_pp.status === 200) {
+                        await fetchUser();
+                    } else {
+                        alert("unable to update image in db");
                     }
+                } else {
+                    alert("Failed to upload image to server.");
                 }
-            }catch (err) {
-                    console.error("Error uploading profile image:", err);
-                }
+            } catch (err) {
+                console.error("Error uploading profile image:", err);
+                alert("An error occurred during upload.");
+            } finally {
+                setpic_updating(false);
+            }
         }
+    };
 
-    }
+
+    const cld = new Cloudinary({
+        cloud: {
+            cloudName: "dgxhjssdt"
+        }
+    });
+
+    const profile_user = userprofile.profile_image
+        ? (userprofile.profile_image.startsWith("http")
+            ? userprofile.profile_image
+            : cld.image(userprofile.profile_image).toURL())
+        : "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png";
 
     if (isparticuar_campaign) {
         return (
@@ -148,6 +168,14 @@ export default function UserProfileLayout({ children }) {
     return (
         <UserProfileContext.Provider value={{ userprofile, setuserprofile, isSameuser, fetchUser }}>
             <User_Navbar />
+             {pic_updating && (
+                 <div className="fixed inset-0 z-50 flex items-center justify-center">
+                     <div className="absolute inset-0 bg-cubist-charcoal/60 backdrop-blur-sm"></div>
+                     <div className="relative  z-10">
+                         <CubistLoader message="updating profile pic" />
+                     </div>
+                 </div>
+             )}
             <div className="min-h-screen pt-16 pb-24 bg-cubist-bg text-cubist-charcoal flex flex-col relative overflow-hidden font-sans">
 
                 {/* Structural Cubist background decoration segments */}
@@ -182,7 +210,7 @@ export default function UserProfileLayout({ children }) {
 
                             <div className="relative w-36 h-36 rounded-full border-4 border-cubist-charcoal overflow-hidden bg-cubist-canvas z-10">
                                 <Image
-                                    src={userprofile.profile_image || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"}
+                                    src={ profile_user || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"}
                                     alt="Profile"
                                     fill
                                     className="object-cover"

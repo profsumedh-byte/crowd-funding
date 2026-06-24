@@ -3,16 +3,20 @@
 import React from "react";
 import { useSession, signIn } from "next-auth/react";
 import { redirect } from "next/navigation";
+import CubistLoader from "./components/CubistLoader";
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session,status } = useSession();
+
 
   if (session) {
     const email = session.user.email;    // if it has session with email of user
     redirect(`/users/${email}`);
   }
 
-  return (
+  else{
+    return ( 
+    status === 'loading' ? <CubistLoader message="Login in process..." /> :
     <div className="flex flex-col items-center justify-center min-h-screen bg-cubist-bg text-cubist-charcoal font-sans p-6 relative overflow-hidden">
       
       {/* Large abstract cubist background forms */}
@@ -49,5 +53,7 @@ export default function Home() {
         </button>
       </div>
     </div>
+  
   );
+  }
 }

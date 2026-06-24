@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createCampaign, getUserCampaigns } from "@/app/services/campaign-services";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import CampaignList from "@/app/components/CampaignList";
+import { checkuser } from "@/app/services/user-services";
 
 
 const Campaigns = () => {
@@ -15,6 +15,14 @@ const Campaigns = () => {
     
     // Stateful list of campaigns, initialized to empty array
     const [campaigns, setCampaigns] = useState([]);
+    const [whouser, setwhouser] = useState(false);
+    useEffect(() => {
+      if (email) {
+        checkuser(email)
+          .then(res => setwhouser(res))
+          .catch(() => setwhouser(false));
+      }
+    }, [email])
 
     const loadCampaigns = useCallback(async () => {
         if (!email) return;
@@ -47,6 +55,8 @@ const Campaigns = () => {
 
     const fileInputRef = useRef(null);
 
+    
+
     // Clean up object URLs to prevent memory leaks
     useEffect(() => {
         return () => {
@@ -55,6 +65,8 @@ const Campaigns = () => {
             }
         };
     }, [bannerPreview]);
+
+    
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -223,7 +235,7 @@ const Campaigns = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                 {/* Start Campaign Option Form Card - Left Column */}
-                <div className="lg:col-span-7 card-cubist-neutral p-8 shape-cubist-curve-2 relative text-cubist-charcoal w-full">
+                {whouser && (<div className="lg:col-span-7 card-cubist-neutral p-8 shape-cubist-curve-2 relative text-cubist-charcoal w-full">
                     <span className="text-[10px] uppercase tracking-widest text-cubist-charcoal/60 font-extrabold font-sans mb-3 block">Creation Portal</span>
                     <h3 className="serif-display text-2xl text-cubist-charcoal font-black uppercase mb-6 border-b-2 border-cubist-charcoal/20 pb-3">Initiate New Campaign</h3>
 
@@ -359,9 +371,10 @@ const Campaigns = () => {
                         </div>
                     </form>
                 </div>
+                )}
 
                 {/* Campaign List Card - Right Column */}
-                <div className="lg:col-span-5 card-cubist-green p-8 shape-cubist-curve-1 relative text-white w-full">
+                <div className={whouser ? "lg:col-span-5 card-cubist-green p-8 shape-cubist-curve-1 relative text-white w-full":"lg:col-span-10 card-cubist-green p-8 shape-cubist-curve-1 relative text-white w-full"}>
                     <span className="text-[10px] uppercase tracking-widest text-white/70 font-extrabold font-sans mb-3 block">Exhibited Pieces</span>
                     <h3 className="serif-display text-2xl text-white font-black uppercase mb-6">Active & Completed Campaigns</h3>
 
