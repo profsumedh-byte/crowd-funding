@@ -18,33 +18,34 @@ export const DEFAULT_ABOUT = "Hey there! I am a full-time digital creator dedica
 export default function UserProfileLayout({ children }) {
     const [paymentform, setpaymentform] = useState({ donorname: "", donoramount: "", donormessage: "" });
     const [isSameuser, setisSameuser] = useState(false);
-    const [userprofile, setuserprofile] = useState({name:'user',email:'',profile_image:"https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",created_at :''});
+    const [userprofile, setuserprofile] = useState({ name: 'user', email: '', profile_image: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png", created_at: '' });
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editForm, setEditForm] = useState({ name: "", about: "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pic_updating, setpic_updating] = useState(false)
-    
+    const [isEditingpay, setIsEditingpay] = useState(false);
+
     const pathname = usePathname();
     const params = useParams();
     const email = params?.email;
 
     const fetchUser = useCallback(async () => {
-            try {
-                if (!email) {
-                    redirect('/users')
-                }
-                const res = await getUser(email);
-                if (!res) {
-                    throw new Error( "Failed to load user");
-                }
-                const data = res;
-                setuserprofile(data);
-            } catch (err) {
-                console.error(err.message);
-            } finally {
-                // setLoading(false);
+        try {
+            if (!email) {
+                redirect('/users')
             }
-        }, [email]);
+            const res = await getUser(email);
+            if (!res) {
+                throw new Error("Failed to load user");
+            }
+            const data = res;
+            setuserprofile(data);
+        } catch (err) {
+            console.error(err.message);
+        } finally {
+            // setLoading(false);
+        }
+    }, [email]);
 
     const openEditModal = () => {
         setEditForm({
@@ -156,7 +157,7 @@ export default function UserProfileLayout({ children }) {
 
     if (isparticuar_campaign) {
         return (
-            <UserProfileContext.Provider value={{ userprofile, setuserprofile, isSameuser, fetchUser }}>
+            <UserProfileContext.Provider value={{ userprofile, setuserprofile, isSameuser, fetchUser, isEditingpay, setIsEditingpay }}>
                 <User_Navbar />
                 <div className="min-h-screen pt-16 bg-cubist-bg text-cubist-charcoal font-sans">
                     {children}
@@ -166,16 +167,16 @@ export default function UserProfileLayout({ children }) {
     }
 
     return (
-        <UserProfileContext.Provider value={{ userprofile, setuserprofile, isSameuser, fetchUser }}>
+        <UserProfileContext.Provider value={{ userprofile, setuserprofile, isSameuser, fetchUser, isEditingpay, setIsEditingpay }}>
             <User_Navbar />
-             {pic_updating && (
-                 <div className="fixed inset-0 z-50 flex items-center justify-center">
-                     <div className="absolute inset-0 bg-cubist-charcoal/60 backdrop-blur-sm"></div>
-                     <div className="relative  z-10">
-                         <CubistLoader message="updating profile pic" />
-                     </div>
-                 </div>
-             )}
+            {pic_updating && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-cubist-charcoal/60 backdrop-blur-sm"></div>
+                    <div className="relative  z-10">
+                        <CubistLoader message="updating profile pic" />
+                    </div>
+                </div>
+            )}
             <div className="min-h-screen pt-16 pb-24 bg-cubist-bg text-cubist-charcoal flex flex-col relative overflow-hidden font-sans">
 
                 {/* Structural Cubist background decoration segments */}
@@ -210,7 +211,7 @@ export default function UserProfileLayout({ children }) {
 
                             <div className="relative w-36 h-36 rounded-full border-4 border-cubist-charcoal overflow-hidden bg-cubist-canvas z-10">
                                 <Image
-                                    src={ profile_user || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"}
+                                    src={profile_user || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"}
                                     alt="Profile"
                                     fill
                                     className="object-cover"
@@ -244,17 +245,37 @@ export default function UserProfileLayout({ children }) {
                                     {userprofile.email || decodeURIComponent(email)}
                                 </p>
                             </div>
-                            
-                            {isSameuser && (
+
+                            {isSameuser && !pathname.endsWith("/payment_details") && (
                                 <button
                                     onClick={openEditModal}
                                     className="shrink-0 inline-flex items-center gap-2 border-4 border-cubist-charcoal px-5 py-2.5 text-xs tracking-widest uppercase font-black text-cubist-charcoal bg-cubist-yellow hover:bg-cubist-orange hover:text-white shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
                                     title="Edit your display name and manifesto"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.013a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth={2.5}
+                                        stroke="currentColor"
+                                        className="w-3.5 h-3.5"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.013a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                                        />
                                     </svg>
                                     Edit Profile
+                                </button>
+                            )}
+
+                            {isSameuser && pathname.endsWith("/payment-details") && (
+                                <button
+                                    onClick={() => setIsEditingpay(true)}
+                                    className="shrink-0 inline-flex items-center gap-2 border-4 border-cubist-charcoal px-5 py-2.5 text-xs tracking-widest uppercase font-black text-cubist-charcoal bg-cubist-yellow hover:bg-cubist-orange hover:text-white shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all cursor-pointer"
+                                >
+                                    Edit Payment
                                 </button>
                             )}
                         </div>
@@ -267,6 +288,7 @@ export default function UserProfileLayout({ children }) {
 
                         {/* Content Body: this is where nested page content goes */}
                         <div className="w-full min-w-0">
+                            
                             {children}
                         </div>
 
