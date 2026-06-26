@@ -34,29 +34,43 @@ model donations {
 }
 
 model users {
-  user_id               BigInt                 @id @default(autoincrement())
-  name                  String?                @db.VarChar
-  email                 String                 @unique @db.VarChar
-  password              String?                @db.VarChar
-  profile_image         String?
-  created_at            DateTime               @default(now()) @db.Timestamptz(6)
-  about                 String?
-  campaigns             campaigns[]
-  user_payment_accounts user_payment_accounts?
+  user_id                   BigInt                     @id @default(autoincrement())
+  name                      String?                    @db.VarChar
+  email                     String                     @unique @db.VarChar
+  password                  String?                    @db.VarChar
+  profile_image             String?
+  created_at                DateTime                   @default(now()) @db.Timestamptz(6)
+  about                     String?
+  campaigns                 campaigns[]
+  cashfree_payment_accounts cashfree_payment_accounts?
+  user_payment_accounts     user_payment_accounts?
 }
 
 model user_payment_accounts {
   user_id         BigInt   @id
-  contact_id      String   @db.VarChar(255)
   fund_account_id String   @unique @db.VarChar
-  account_name    String   @db.VarChar(255)
   email           String   @db.VarChar(255)
   phone           String   @db.VarChar(30)
   upi_id          String   @unique @db.VarChar(255)
-  status          String   @default("active") @db.VarChar(50)
   created_at      DateTime @default(now()) @db.Timestamptz(6)
   updated_at      DateTime @default(now()) @db.Timestamptz(6)
+  account_name    String   @db.VarChar(255)
+  contact_id      String   @db.VarChar(255)
+  status          String   @default("active") @db.VarChar(50)
   users           users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model cashfree_payment_accounts {
+  user_id        BigInt             @id
+  beneficiary_id String             @unique
+  email          String             @unique @db.VarChar(255)
+  phone          String             @unique @db.VarChar(30)
+  upi_id         String             @unique @db.VarChar(255)
+  account_name   String             @db.VarChar(255)
+  status         beneficiary_status @default(pending)
+  created_at     DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?          @default(now()) @db.Timestamptz(6)
+  users          users              @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 enum campaignstatus {
@@ -68,4 +82,11 @@ enum payment_status {
   success
   pending
   failed
+}
+
+enum beneficiary_status {
+  pending
+  active
+  rejected
+  disabled
 }

@@ -43,7 +43,22 @@ export async function getUser(email){
     const decoded_email = decodeURIComponent(email).trim();
     const user = await prisma.users.findUnique({
         where: {email: decoded_email},
-        select: {name: true,email:true,created_at: true,profile_image:true,about:true}
+        select: {
+            name: true,
+            email: true,
+            created_at: true,
+            profile_image: true,
+            about: true,
+            cashfree_payment_accounts: {
+                select: {
+                    email: true,
+                    phone: true,
+                    upi_id: true,
+                    account_name: true,
+                    status: true
+                }
+            }
+        }
     })
 
     return user;
