@@ -60,7 +60,7 @@ export async function GET(request, { params }) {
             donations: {
                 where: { status: "success" },
                 orderBy: { donated_at: "desc" },
-                take: 10,
+                take: 5,
                 select: {
                     donor_name: true,
                     amount: true,

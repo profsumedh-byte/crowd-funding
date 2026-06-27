@@ -9,6 +9,7 @@ import { createDonation } from "@/app/services/campaign-services";
 import { createorder } from "@/app/services/rzp-services";
 import { verifypayment } from "@/app/services/rzp-services";
 
+
 // Converts a UTC ISO string to a relative time label like "2h ago" or "3d ago"
 function getRelativeTime(isoString) {
     const diffMs = Date.now() - new Date(isoString).getTime();
@@ -106,6 +107,11 @@ export default function CampaignDetailPage() {
         const amount = parseFloat(paymentForm.donoramount);
         const message = paymentForm.donormessage;
         if (!paymentForm.donorname.trim() || isNaN(amount) || amount <= 0) return;
+
+        if (amount > 10000) {
+            alert("The maximum contribution amount is ₹10,000.");
+            return;
+        }
 
         try {
             // 1. Create order on the server
@@ -220,11 +226,12 @@ export default function CampaignDetailPage() {
     const raised = parseFloat(campaign.current_amount);
     const backers = campaign.donations?.length ?? 0;
 
-    const donors = (campaign.donations ?? []).map((d) => ({
+    const donors = (campaign.donations ?? []).slice(0, 5).map((d) => ({
         name: d.donor_name,
         amount: parseFloat(d.amount),
         time: getRelativeTime(d.donated_at),
         avatar: getInitials(d.donor_name),
+        message: d.message,
     }));
 
     const campaignProp = {

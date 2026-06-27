@@ -195,7 +195,7 @@ export default function UserCampaignPage({
                                             </div>
                                             <div>
                                                 <h4 className="font-sans font-black text-sm text-cubist-charcoal uppercase tracking-wide">
-                                                    {donor.name}
+                                                    {donor.message ? `${donor.name} says, "${donor.message}"` : donor.name}
                                                 </h4>
                                                 <p className="text-[9px] text-cubist-charcoal/60 uppercase tracking-widest font-extrabold mt-0.5">
                                                     {donor.time}

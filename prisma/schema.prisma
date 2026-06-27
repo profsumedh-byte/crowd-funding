@@ -25,7 +25,7 @@ model donations {
   donation_id BigInt         @id @default(autoincrement())
   campaign_id BigInt?
   donor_name  String         @db.VarChar
-  amount      Decimal        @db.Decimal(5, 2)
+  amount      Decimal        @db.Decimal(10, 2)
   message     String?
   payment_id  String         @db.VarChar
   status      payment_status @default(pending)

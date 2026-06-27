@@ -7,6 +7,7 @@ import { confirmDonation } from "@/app/services/campaign-services";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+
 export async function createorder({ amount, currency, receipt, notes }) {
     try {
         const options = {
@@ -35,7 +36,7 @@ export async function verifypayment(params) {
     }
 
     const secret = process.env.RZP_SECRET;
-    
+
     try {
         // Standard Razorpay payment signature verification using crypto
         const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -43,7 +44,7 @@ export async function verifypayment(params) {
             .createHmac("sha256", secret)
             .update(body)
             .digest("hex");
-            
+
         const isValidSignature = expectedSignature === razorpay_signature;
 
         if (isValidSignature) {
@@ -57,6 +58,24 @@ export async function verifypayment(params) {
                     donation_id: donation.donation_id,
                     payment_id: razorpay_payment_id
                 });
+
+                // Send donation notification email via Resend (non-blocking)
+                import("resend").then(({ Resend }) => {
+                    const resend = new Resend(process.env.RESEND_KEY);
+                    resend.emails.send({
+                        from: 'Resend <onboarding@resend.dev>',
+                        to: 'prof.sumedh@gmail.com',
+                        subject: 'New Donation Received!',
+                        html: `<p>Congrats! You have received a new donation of <strong>₹${donation.amount}</strong> from <strong>${donation.donor_name}</strong>!</p>`
+                    }).then((emailResponse) => {
+                        console.log("Donation email sent successfully:", emailResponse);
+                    }).catch((emailErr) => {
+                        console.error("Failed to send donation email:", emailErr);
+                    });
+                }).catch((importErr) => {
+                    console.error("Failed to import resend:", importErr);
+                });
+
                 return { status: 200, message: "payment updated in db" };
             } else {
                 throw new Error(`Donation record not found for order: ${razorpay_order_id}`);
