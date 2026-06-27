@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import CampaignStatsCard from "@/app/components/CampaignStatsCard";
 import { useSession } from "next-auth/react";
+import ClaimFundButton from "@/app/components/ClaimFundButton";
 
 /**
  * UserCampaignPage - Pure presentational page component for campaign detail view.
@@ -38,11 +39,33 @@ export default function UserCampaignPage({
     const { data: session } = useSession();
     const userid = session?.user?.id;
     const params = useParams();
-    const campaign_id = params?.campaign_id;
+    const campaign_id = params?.campaign_Id || params?.campaign_id;
 
     const email = params?.email || "email";
 
+    const [isClaiming, setIsClaiming] = useState(false);
     const [localPaymentForm, setLocalPaymentForm] = useState({ donorname: "", donoramount: "", donormessage: "" });
+
+    const handleClaim = async () => {
+        setIsClaiming(true);
+        try {
+            const response = await fetch(`/api/campaigns/${campaign_id}`, {
+                method: "POST"
+            });
+            const res = await response.json();
+            if (response.ok && res?.success) {
+                alert(res.message || "Funds claimed successfully!");
+                // Reload the page to reflect 0 balance
+                window.location.reload();
+            } else {
+                alert(res?.error || "Failed to claim funds.");
+            }
+        } catch (err) {
+            alert(err.message || "An error occurred while claiming funds.");
+        } finally {
+            setIsClaiming(false);
+        }
+    };
 
     const handleFormChange = (e) => {
         const { name, value } = e.target;
@@ -81,17 +104,24 @@ export default function UserCampaignPage({
 
     return (
         <div className="min-h-screen bg-cubist-bg text-cubist-charcoal font-sans flex flex-col pb-20">
-            {/* Back Button */}
-            <div className="max-w-7xl mx-auto px-6 w-full pt-8">
+            {/* Header Toolbar (Back button + Claim Fund button) */}
+            <div className="max-w-7xl mx-auto px-6 w-full pt-8 flex flex-row justify-between items-center gap-4 flex-wrap">
                 <Link 
                     href={`/users/${email}/campaigns`}
-                    className="inline-flex items-center gap-2 border-2 border-cubist-charcoal px-4 py-2 text-[10px] tracking-widest uppercase font-bold text-cubist-charcoal shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all bg-cubist-canvas"
+                    className="inline-flex items-center gap-2 border-2 border-cubist-charcoal px-4 py-2 text-[10px] tracking-widest uppercase font-bold text-cubist-charcoal shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all bg-cubist-canvas shrink-0"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                     </svg>
                     Back to Campaigns
                 </Link>
+                {session?.user?.email === decodeURIComponent(email) && (
+                    <ClaimFundButton 
+                        loading={isClaiming}
+                        onClick={()=>handleClaim(email)}
+                        className="shrink-0"
+                    />
+                )}
             </div>
 
             {/* Banner Section */}

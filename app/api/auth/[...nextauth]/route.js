@@ -11,6 +11,9 @@ export const authOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
+      if (!user?.email) {
+        return false;
+      }
       const candidate = await prisma.users.findUnique({
         where: { email: user.email },
       });
@@ -26,11 +29,13 @@ export const authOptions = {
       return true;
     },
     async session({ session, token }) {
-      const dbUser = await prisma.users.findUnique({
-        where: { email: session.user.email },
-      });
-      if (dbUser) {
-        session.user.id = dbUser.user_id.toString();
+      if (session?.user?.email) {
+        const dbUser = await prisma.users.findUnique({
+          where: { email: session.user.email },
+        });
+        if (dbUser) {
+          session.user.id = dbUser.user_id.toString();
+        }
       }
       return session;
     }

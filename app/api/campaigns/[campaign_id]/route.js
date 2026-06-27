@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
+import { claim_campaign_fund } from "@/app/services/campaign-services";
 
-function serializePrisma(obj) {                                 //What does it do?
-                                                                // The helper recursively traverses the returned data object and converts:
+function serializePrisma(obj) {                                 
+    //What does it do?
+     // The helper recursively traverses the returned data object and converts:
 
-                                                                // BigInt fields (like campaign_id and user_id) to standard string representations (e.g., "6").
-                                                                // Decimal fields (like goal_amount and current_amount) to string numbers (e.g., "1000.00").
-                                                                // Date objects (like created_at or donated_at) to standard ISO strings ("2026-06-23T14:27:09.898Z").
+    // BigInt fields (like campaign_id and user_id) to standard string representations (e.g., "6").
+    // Decimal fields (like goal_amount and current_amount) to string numbers (e.g., "1000.00").
+    // Date objects (like created_at or donated_at) to standard ISO strings ("2026-06-23T14:27:09.898Z").
     if (obj === null || obj === undefined) return obj;
     if (Array.isArray(obj)) {
         return obj.map(serializePrisma);
@@ -74,4 +76,21 @@ export async function GET(request, { params }) {
     }
 
     return NextResponse.json(serializePrisma(campaign));
+}
+
+
+export async function POST(request, { params }){
+    const { campaign_id } = await params;
+
+    const id = parseInt(campaign_id, 10);
+    if (isNaN(id)) {
+        return NextResponse.json({ error: "Invalid campaign ID" }, { status: 400 });
+    }
+
+    try {
+        const result = await claim_campaign_fund(id);
+        return NextResponse.json(result);
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 }
