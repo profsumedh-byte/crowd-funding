@@ -3,6 +3,7 @@
 import React from "react";
 import { useSession, signIn } from "next-auth/react";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import CubistLoader from "./components/CubistLoader";
 
 export default function Home() {
@@ -51,6 +52,13 @@ export default function Home() {
         >
           Sign In with Google
         </button>
+
+        <Link 
+          href="/users"
+          className="w-full bg-cubist-yellow text-cubist-charcoal border-2 border-cubist-charcoal shadow-cubist hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-cubist-lg active:translate-x-0 active:translate-y-0 active:shadow-none font-bold py-3.5 px-6 rounded-none text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer mt-4" 
+        >
+          Continue as a Donor
+        </Link>
       </div>
     </div>
   

@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
+import { UserProfileContext } from '@/app/users/[email]/layout';
 
 const User_Navbar = () => {
     const params = useParams();
     const email = params?.email;
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { data: session } = useSession();
+    
+    // Consume isSameuser from context, fallback to false if not inside provider
+    const { isSameuser } = useContext(UserProfileContext) || {};
 
     // Build paths dynamically based on the current email parameter
     const profilePath = email ? `/users/${email}` : '#';
@@ -45,29 +50,59 @@ const User_Navbar = () => {
                 
                 <div className={`${mobileOpen ? "block" : "hidden"} w-full md:block md:w-auto mt-4 md:mt-0`} id="navbar-default">
                     <ul className="font-sans text-[11px] font-bold uppercase tracking-widest flex flex-col p-4 md:p-0 border-2 border-cubist-charcoal md:border-0 bg-cubist-cobalt md:bg-transparent md:flex-row md:space-x-8 md:items-center">
-                        <li>
-                            <Link href={profilePath} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
-                                Profile
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href={campaignsPath} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
-                                Campaigns
-                            </Link>
-                        </li>
-                        <li>
-                            <Link href={email ? `/users/${email}/payment-details` : '#'} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
-                                Payment Details
-                            </Link>
-                        </li>
+                        {email ? (
+                            <>
+                                <li>
+                                    <Link href="/users" className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
+                                        Home
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href={profilePath} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
+                                        Profile
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href={campaignsPath} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
+                                        Campaigns
+                                    </Link>
+                                </li>
+                                {isSameuser && (
+                                    <li>
+                                        <Link href={`/users/${email}/payment-details`} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
+                                            Payment Details
+                                        </Link>
+                                    </li>
+                                )}
+                            </>
+                        ) : (
+                            // Registry/Discover view
+                            session?.user?.email && (
+                                <li>
+                                    <Link href={`/users/${session.user.email}`} className="block py-2 px-3 md:p-0 hover:text-cubist-yellow transition-colors">
+                                        Dashboard
+                                    </Link>
+                                </li>
+                            )
+                        )}
+                        
                         <li className="mt-3 md:mt-0 pt-3 md:pt-0 border-t-2 border-cubist-charcoal md:border-t-0">
-                            <button 
-                                type="button" 
-                                onClick={() => { signOut({ callbackUrl: '/' }) }} 
-                                className="w-full md:w-auto bg-cubist-yellow text-cubist-charcoal border-2 border-cubist-charcoal shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all font-bold text-[10px] tracking-widest uppercase px-5 py-2.5 text-center cursor-pointer"
-                            >
-                                logout
-                            </button>
+                            {session ? (
+                                <button 
+                                    type="button" 
+                                    onClick={() => { signOut({ callbackUrl: '/' }) }} 
+                                    className="w-full md:w-auto bg-cubist-yellow text-cubist-charcoal border-2 border-cubist-charcoal shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all font-bold text-[10px] tracking-widest uppercase px-5 py-2.5 text-center cursor-pointer"
+                                >
+                                    logout
+                                </button>
+                            ) : (
+                                <Link 
+                                    href="/" 
+                                    className="block w-full md:w-auto bg-cubist-yellow text-cubist-charcoal border-2 border-cubist-charcoal shadow-cubist-sm hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-none transition-all font-bold text-[10px] tracking-widest uppercase px-5 py-2.5 text-center cursor-pointer"
+                                >
+                                    Sign In
+                                </Link>
+                            )}
                         </li>
                     </ul>
                 </div>

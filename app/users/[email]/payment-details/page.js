@@ -1,12 +1,22 @@
 "use client";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { cashfree_payment_account } from "@/app/services/payouts/user";
 import React from "react";
 import { UserProfileContext } from "../layout";
+import { useRouter, useParams } from "next/navigation";
 
 const PaymentDetails = () => {
-    const { userprofile, fetchUser, isEditingpay, setIsEditingpay } = useContext(UserProfileContext) || {};
+    const { userprofile, fetchUser, isEditingpay, setIsEditingpay, isSameuser } = useContext(UserProfileContext) || {};
     const isEditing = isEditingpay;
+    const router = useRouter();
+    const params = useParams();
+    const email = params?.email;
+
+    useEffect(() => {
+        if (isSameuser === false) {
+            router.replace(`/users/${userprofile?.email || email}`);
+        }
+    }, [isSameuser, router, userprofile, email]);
     const cashfree = userprofile?.cashfree_payment_accounts;
     const [isSaving, setIsSaving] = useState(false);
 

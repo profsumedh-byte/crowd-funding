@@ -17,7 +17,7 @@ export const DEFAULT_ABOUT = "Hey there! I am a full-time digital creator dedica
 
 export default function UserProfileLayout({ children }) {
     const [paymentform, setpaymentform] = useState({ donorname: "", donoramount: "", donormessage: "" });
-    const [isSameuser, setisSameuser] = useState(false);
+    const [isSameuser, setisSameuser] = useState(null);
     const [userprofile, setuserprofile] = useState({ name: 'user', email: '', profile_image: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png", created_at: '' });
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editForm, setEditForm] = useState({ name: "", about: "" });
@@ -204,9 +204,9 @@ export default function UserProfileLayout({ children }) {
                     <div className="flex flex-col md:flex-row items-end gap-6 md:gap-8">
 
                         {/* Profile Picture Frame (Concentric Eye Motif) */}
-                        <div className="relative group shrink-0">
+                        <div className="relative group shrink-0 transition-transform ease-out duration-300 hover:scale-105">
                             {/* Outer offset circles */}
-                            <div className="absolute inset-0 bg-cubist-yellow rounded-full border-4 border-cubist-charcoal translate-x-3 translate-y-3 transition-transform group-hover:translate-x-4 group-hover:translate-y-4"></div>
+                            <div className="absolute inset-0 bg-cubist-yellow rounded-full border-4 border-cubist-charcoal translate-x-3 translate-y-3"></div>
                             <div className="absolute inset-0 bg-cubist-red rounded-full border-4 border-cubist-charcoal -translate-x-1.5 -translate-y-1.5"></div>
 
                             <div className="relative w-36 h-36 rounded-full border-4 border-cubist-charcoal overflow-hidden bg-cubist-canvas z-10">

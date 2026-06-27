@@ -92,6 +92,25 @@ export async function updateUserProfile(emailofuser, name, about) {
     }
 }
 
-
-
-
+export async function getAllUsers() {
+    try {
+        const allUsers = await prisma.users.findMany({
+            select: {
+                name: true,
+                email: true,
+                profile_image: true,
+                about: true,
+                _count: {
+                    select: { campaigns: true }
+                }
+            },
+            orderBy: {
+                created_at: 'desc'
+            }
+        });
+        return allUsers;
+    } catch (err) {
+        console.error("Error fetching all users:", err);
+        return [];
+    }
+}
