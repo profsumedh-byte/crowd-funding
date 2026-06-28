@@ -204,7 +204,7 @@ export default function UserCampaignPage({
                                         </div>
                                         
                                         <div className="flex items-center gap-1.5 bg-white border-2 border-cubist-charcoal px-3 py-1.5 shadow-cubist-sm group-hover:-translate-y-0.5 transition-transform">
-                                            <span className="serif-display text-sm font-black text-cubist-orange">+$</span>
+                                            <span className="serif-display text-sm font-black text-cubist-orange">+₹</span>
                                             <span className="serif-display text-base font-black text-cubist-charcoal">{donor.amount.toLocaleString()}</span>
                                         </div>
                                     </div>

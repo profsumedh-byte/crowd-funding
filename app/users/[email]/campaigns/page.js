@@ -134,6 +134,12 @@ const Campaigns = () => {
             return;
         }
 
+        const goalAmount = parseFloat(formData.goal);
+        if (goalAmount > 99999999) {
+            alert("The maximum expected amount for a campaign is ₹99,999,999.");
+            return;
+        }
+
         if (!session || !session.user || !session.user.id) {
             alert("You must be logged in to create a campaign.");
             return;
@@ -327,9 +333,9 @@ const Campaigns = () => {
                         {/* Total Amount Needed */}
                         <div className="flex flex-col gap-1.5">
                             <label htmlFor="campaign-goal" className="text-[9px] uppercase tracking-widest text-cubist-charcoal/70 font-extrabold font-sans">Total Amount Needed</label>
-                            <div className="flex bg-white border-2 border-cubist-charcoal shadow-cubist-sm relative">
+                            <div className={`flex bg-white border-2 shadow-cubist-sm relative ${parseFloat(formData.goal) > 99999999 ? "border-cubist-red" : "border-cubist-charcoal"}`}>
                                 <span className="bg-cubist-charcoal text-white font-bold px-4 py-2.5 text-sm border-r-2 border-cubist-charcoal flex items-center justify-center font-sans">
-                                    $
+                                    ₹
                                 </span>
                                 <input
                                     type="text"
@@ -342,6 +348,11 @@ const Campaigns = () => {
                                     className="w-full px-4 py-2.5 text-sm font-sans focus:outline-none placeholder-cubist-charcoal/40 text-cubist-charcoal"
                                 />
                             </div>
+                            {parseFloat(formData.goal) > 99999999 && (
+                                <span className="text-cubist-red text-[10px] font-sans font-bold uppercase tracking-wider mt-1">
+                                    The maximum expected amount for a campaign is ₹99,999,999.
+                                </span>
+                            )}
                         </div>
 
                         {/* Submit Button */}
